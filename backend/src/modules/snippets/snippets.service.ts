@@ -13,6 +13,16 @@ export class SnippetsService {
     private readonly usersService: UsersService,
   ) {}
 
+  async findOneById(userEmail: string, snippetId: string) {
+    const snippet = await this.snippetModel.findOne({ _id: snippetId }).exec();
+
+    if (!snippet || snippet.userEmail !== userEmail) {
+      throw new NotFoundException('Snippet not found');
+    }
+
+    return snippet;
+  }
+
   async findAllUserSnippets(userEmail: string): Promise<Snippet[]> {
     const user = await this.usersService.findOneByEmail(userEmail);
 
@@ -36,8 +46,12 @@ export class SnippetsService {
     return createdSnippet.save();
   }
 
-  async update(userEmail: string, dto: UpdateSnippetDto) {
-    const snippet = await this.snippetModel.findOne({ userEmail }).exec();
+  async update(
+    userEmail: string,
+    snippetId: string,
+    dto: UpdateSnippetDto,
+  ): Promise<Snippet | null> {
+    const snippet = await this.snippetModel.findOne({ _id: snippetId }).exec();
 
     if (!snippet) {
       throw new NotFoundException('Snippet not found');
@@ -50,5 +64,19 @@ export class SnippetsService {
     return updatedSnippet;
   }
 
-  // add delete
+  async delete(userEmail: string, snippetId: string) {
+    const user = await this.usersService.findOneByEmail(userEmail);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const snippet = await this.snippetModel.findOne({ _id: snippetId }).exec();
+
+    if (!snippet) {
+      throw new NotFoundException('Snippet not found');
+    }
+
+    return this.snippetModel.deleteOne({ _id: snippetId });
+  }
 }
